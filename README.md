@@ -1,6 +1,6 @@
-# Getting Started with Create React App
+# Tours
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A practice React project bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
 
@@ -11,60 +11,214 @@ In the project directory, you can run:
 Runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
 ### `npm run build`
 
 Builds the app for production to the `build` folder.\
 It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Development Log
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Project Setup
 
-### `npm run eject`
+- `index.css` - global styles
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Loading Component
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- create `Loading.js`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```jsx
+const Loading = () => {
+  return (
+    <div className="loading">
+      <h1>loading...</h1>
+    </div>
+  );
+};
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+export default Loading;
+```
 
-## Learn More
+### Fetch Data
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- inside `App.js`, we have
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```jsx
+import { useState, useEffect } from "react";
+import Loading from "./Loading";
+const url = "https://course-api.com/react-tours-project";
 
-### Code Splitting
+function App() {
+  const [loading, setloading] = useState(true);
+  const [tours, setTours] = useState([]);
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+  const fetchTours = async () => {
+    setloading(true);
+    try {
+      const response = await fetch(url);
+      const tours = await response.json();
+      setloading(false);
+      setTours(tours);
+    } catch (error) {
+      setloading(false);
+      console.log(error);
+    }
+  };
 
-### Analyzing the Bundle Size
+  useEffect(() => {
+    fetchTours();
+  }, []);
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+  return loading ? (
+    <main>
+      <Loading />
+    </main>
+  ) : (
+    <main>Tours</main>
+  );
+}
 
-### Making a Progressive Web App
+export default App;
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Display Tours
 
-### Advanced Configuration
+- create `Tours.js`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```jsx
+import Tour from "./Tour";
 
-### Deployment
+const Tours = ({ tours }) => {
+  return (
+    <section>
+      <div className="title">
+        <h2>our tours</h2>
+        <div className="underline"></div>
+      </div>
+      <div>
+        {tours.map((tour) => (
+          <Tour key={tour.id} {...tour} />
+        ))}
+      </div>
+    </section>
+  );
+};
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+export default Tours;
+```
 
-### `npm run build` fails to minify
+- create `Tour.js`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```jsx
+const Tour = ({ name, image, info, price }) => {
+  return (
+    <article className="single-tour">
+      <img src={image} alt={name} />
+      <footer>
+        <div className="tour-info">
+          <h4>{name}</h4>
+          <h4 className="tour-price">${price}</h4>
+        </div>
+        <p>{info}</p>
+        <button className="delete-btn">not interested</button>
+      </footer>
+    </article>
+  );
+};
+
+export default Tour;
+```
+
+### Toggle Info
+
+inside `Tour.js`, we update
+
+```jsx
+import { useState } from "react";
+
+const Tour = ({ name, image, info, price }) => {
+  const [readMore, setReadMore] = useState(false);
+  return (
+    // ...
+
+    <p>
+      {readMore ? info : info.substring(0, 200).concat("...")}
+      <button
+        onClick={() => {
+          setReadMore(!readMore);
+        }}
+      >
+        {readMore ? "Show Less" : "Read More"}
+      </button>
+    </p>
+
+    // ...
+  );
+};
+
+export default Tour;
+```
+
+### Remove and Refetch Tours
+
+inside `App.js`, we update
+
+```jsx
+function App() {
+  // ...
+
+  const removeTour = (id) => {
+    setTours(tours.filter((tour) => tour.id !== id));
+  };
+
+  // ...
+
+  return loading ? (
+    <main>
+      <Loading />
+    </main>
+  ) : tours.length ? (
+    <main>
+      <Tours tours={tours} removeTour={removeTour} />
+    </main>
+  ) : (
+    <main>
+      <div className="title">
+        <h2>no tours left</h2>
+        <button className="btn" onClick={fetchTours}>
+          Refresh
+        </button>
+      </div>
+    </main>
+  );
+}
+
+export default App;
+```
+
+inside `Tours.js`, we update
+
+```jsx
+const Tours = ({ tours, removeTour }) => {
+  // ...
+
+  <Tour key={tour.id} {...tour} removeTour={removeTour} />;
+
+  // ...
+};
+```
+
+inside `Tour.js`, we update
+
+```jsx
+const Tour = ({ id, name, image, info, price, removeTour }) => {
+  // ...
+
+  <button className="delete-btn" onClick={() => removeTour(id)}>
+    not interested
+  </button>;
+
+  // ...
+};
+
+export default Tour;
+```
